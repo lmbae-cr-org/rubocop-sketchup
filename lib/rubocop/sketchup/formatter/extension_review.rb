@@ -3,6 +3,9 @@
 require 'cgi'
 require 'erb'
 require 'ostruct'
+require 'pathname'
+require 'set'
+require 'yaml'
 require 'base64'
 require 'rubocop/formatter/text_util'
 
@@ -14,17 +17,22 @@ module RuboCop
       TEMPLATE_PATH =
           File.expand_path('../../../../assets/output.html.erb', __dir__)
 
+      BASELINE_FILENAME = '.rubocop-sketchup-baseline.yml'
+
       attr_reader :categories, :files, :summary
 
       def initialize(output, options = {})
         super
         @categories = {}
         @files = []
-        @summary = OpenStruct.new(offense_count: 0)
+        @summary = OpenStruct.new(offense_count: 0, baselined_count: 0)
+        @baseline = Set.new
+        @baseline_entries = []
       end
 
       def started(target_files)
         summary.target_files = target_files
+        @baseline = load_baseline(baseline_path)
       end
 
       def file_finished(file, offenses)
@@ -33,17 +41,69 @@ module RuboCop
           # Report only SketchUp related cops.
           next unless offense.cop_name.start_with?('Sketchup')
 
+          summary.offense_count += 1
+          @baseline_entries << baseline_entry(file, offense)
+          if @baseline.include?(baseline_key(offense))
+            summary.baselined_count += 1
+            next
+          end
+
           report = OpenStruct.new(path: file, offense: offense)
           categories[offense.cop_name] ||= []
           categories[offense.cop_name] << report
-          summary.offense_count += 1
         }
       end
 
       def finished(inspected_files)
         summary.inspected_files = inspected_files
 
+        write_baseline(baseline_path) if write_baseline?
         render_html
+      end
+
+      # Path to the baseline of known offenses to leave out of the report.
+      # Defaults to `.rubocop-sketchup-baseline.yml` in the working directory
+      # and can be overridden with `RUBOCOP_SKETCHUP_BASELINE`.
+      #
+      # @return [String]
+      def baseline_path
+        ENV.fetch('RUBOCOP_SKETCHUP_BASELINE') {
+          File.join(Dir.pwd, BASELINE_FILENAME)
+        }
+      end
+
+      def write_baseline?
+        ENV.fetch('RUBOCOP_SKETCHUP_WRITE_BASELINE', nil) == '1'
+      end
+
+      # @param [String] path
+      # @return [Set<Array(String, Integer)>]
+      def load_baseline(path)
+        return Set.new unless File.exist?(path)
+
+        # Baseline files may use YAML aliases and symbols, which the safe
+        # loader rejects.
+        loader =
+          YAML.respond_to?(:unsafe_load_file) ? :unsafe_load_file : :load_file
+        entries = YAML.public_send(loader, path) || []
+        entries.to_set { |entry| [entry['cop'], entry['line']] }
+      end
+
+      # @param [String] path
+      def write_baseline(path)
+        File.write(path, @baseline_entries.to_yaml)
+      end
+
+      def baseline_entry(file, offense)
+        {
+          'path' => Pathname.new(file).relative_path_from(Pathname.new(Dir.pwd)).to_s,
+          'cop' => offense.cop_name,
+          'line' => offense.line,
+        }
+      end
+
+      def baseline_key(offense)
+        [offense.cop_name, offense.line]
       end
 
       def render_html
