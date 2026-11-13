@@ -96,6 +96,36 @@ file.force_encoding('UTF-8') if file.respond_to?(:force_encoding)
 basename = File.basename(file, '.*')
 ```
 
+<a name='htmldialoginterpolation'></a>
+## SketchupSuggestions/HtmlDialogInterpolation
+
+Enabled by default | Supports autocorrection
+--- | ---
+Enabled | No
+
+Avoid building JavaScript with string interpolation when calling
+`UI::HtmlDialog#execute_script`.
+
+Interpolating Ruby values directly into a JavaScript string allows
+values such as entity names, attribute values or file paths to break
+out of the intended script and execute arbitrary JavaScript in the
+dialog. Serialize data to JSON instead and pass it to a function
+defined in the dialog.
+
+Use `AllowedReceivers` to skip dialogs known to only receive trusted
+input.
+
+### Examples
+
+```ruby
+# bad
+dialog.execute_script("updateName('#{entity.name}')")
+
+# good
+script = "updateName(#{entity.name.to_json})"
+dialog.execute_script(script)
+```
+
 <a name='modelentities'></a>
 ## SketchupSuggestions/ModelEntities
 

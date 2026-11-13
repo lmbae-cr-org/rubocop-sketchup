@@ -94,6 +94,7 @@ In the following section you find all available cops:
 * [SketchupSuggestions/Compatibility](cops_suggestions.md#sketchupsuggestionscompatibility)
 * [SketchupSuggestions/DynamicComponentInternals](cops_suggestions.md#sketchupsuggestionsdynamiccomponentinternals)
 * [SketchupSuggestions/FileEncoding](cops_suggestions.md#sketchupsuggestionsfileencoding)
+* [SketchupSuggestions/HtmlDialogInterpolation](cops_suggestions.md#sketchupsuggestionshtmldialoginterpolation)
 * [SketchupSuggestions/ModelEntities](cops_suggestions.md#sketchupsuggestionsmodelentities)
 * [SketchupSuggestions/MonkeyPatchedApi](cops_suggestions.md#sketchupsuggestionsmonkeypatchedapi)
 * [SketchupSuggestions/OperationName](cops_suggestions.md#sketchupsuggestionsoperationname)

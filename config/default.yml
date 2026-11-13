@@ -322,6 +322,20 @@ SketchupSuggestions/FileEncoding:
   Reference: https://github.com/SketchUp/rubocop-sketchup/tree/main/manual/cops_suggestions.md#fileencoding
   Enabled: true
 
+SketchupSuggestions/HtmlDialogInterpolation:
+  Description: >-
+                 Avoid building JavaScript with string interpolation when
+                 calling `UI::HtmlDialog#execute_script`.
+  Details: >-
+             Interpolating Ruby values directly into a JavaScript string allows
+             values such as entity names, attribute values or file paths to
+             break out of the intended script and execute arbitrary JavaScript
+             in the dialog. Serialize data to JSON instead and pass it to a
+             function defined in the dialog.
+  Reference: https://github.com/SketchUp/rubocop-sketchup/tree/main/manual/cops_suggestions.md#htmldialoginterpolation
+  AllowedReceivers: []
+  Enabled: true
+
 SketchupSuggestions/ModelEntities:
   Description: >-
                  Typically one should use `model.active_entities` instead of
