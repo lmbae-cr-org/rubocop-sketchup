@@ -348,6 +348,12 @@
         <div class="total">
           <%= pluralize(files.count, 'file') %> inspected: <%= severity_summary %>
         </div>
+        <% if summary.baselined_count.positive? %>
+        <div class="baselined">
+          <%= pluralize(summary.offense_count, 'new offense') %> reported,
+          <%= summary.baselined_count %> known offenses hidden by baseline
+        </div>
+        <% end %>
         <ul class="offenses-list">
           <% categories.each do |category, groups| %>
             <li>
