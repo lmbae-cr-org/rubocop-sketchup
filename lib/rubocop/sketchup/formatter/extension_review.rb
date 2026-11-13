@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'cgi'
+require 'English'
 require 'erb'
 require 'ostruct'
 require 'base64'
@@ -25,6 +26,7 @@ module RuboCop
 
       def started(target_files)
         summary.target_files = target_files
+        summary.git = git_metadata(project_directory(target_files))
       end
 
       def file_finished(file, offenses)
@@ -54,6 +56,27 @@ module RuboCop
         html = erb.result(context.binding)
 
         output.write html
+      end
+
+      # @param [Array<String>] target_files
+      # @return [String]
+      def project_directory(target_files)
+        return Dir.pwd if target_files.nil? || target_files.empty?
+
+        File.dirname(target_files.first)
+      end
+
+      # Collects the branch and commit of the inspected project so the report
+      # can be traced back to the source it was generated from.
+      #
+      # @param [String] directory
+      # @return [OpenStruct, nil]
+      def git_metadata(directory)
+        branch = `git -C "#{directory}" rev-parse --abbrev-ref HEAD 2>&1`.strip
+        return nil unless $CHILD_STATUS&.success?
+
+        commit = `git -C "#{directory}" rev-parse --short HEAD 2>&1`.strip
+        OpenStruct.new(branch: branch, commit: commit)
       end
 
       # This class provides helper methods used in the ERB template.
@@ -277,6 +300,26 @@ module RuboCop
         def source_after_highlight(offense)
           source_line = offense.location.source_line
           escape(source_line[offense.highlighted_area.end_pos..])
+        end
+
+        # Number of lines to show before and after each offense. Configured
+        # with the `RUBOCOP_SKETCHUP_CONTEXT_LINES` environment variable.
+        def context_lines
+          ENV.fetch('RUBOCOP_SKETCHUP_CONTEXT_LINES', '0').to_i
+        end
+
+        def source_context(offense)
+          lines = offense.location.source_buffer.source_lines
+          line = offense.location.line
+          first = [line - context_lines, 0].max
+          last = [line + context_lines, lines.size - 1].min
+          (first..last).map { |index|
+            OpenStruct.new(
+                number: index,
+                source: escape(lines[index]),
+                current: index == line
+              )
+          }
         end
 
         def possible_ellipses(location)

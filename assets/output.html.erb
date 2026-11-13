@@ -154,6 +154,18 @@
     line-height: 1.6rem;
     tab-size: 1;
     }
+    #offenses .offense-box .offense-reports .report pre code .line-number {
+    display: inline-block;
+    min-width: 3em;
+    margin-right: 1em;
+    opacity: 0.5;
+    text-align: right;
+    user-select: none;
+    }
+    #header .git-info {
+    font-size: 1.2rem;
+    opacity: 0.8;
+    }
     #offenses .offense-box .offense-reports .report .location {
     font-weight: bold;
     }
@@ -342,6 +354,11 @@
     <div id="header">
       <img class="logo" src="data:image/png;base64,<%= base64_encoded_logo_image %>" alt="">
       <h1 class="title">SketchUp Extension RuboCop Inspection Report</h1>
+      <% if summary.git %>
+      <div class="git-info">
+        Branch <code><%= summary.git.branch %></code> at <code><%= summary.git.commit %></code>
+      </div>
+      <% end %>
     </div>
     <div class="information">
       <div class="infobox">
@@ -407,7 +424,12 @@
                     <% location_offense = location_report.offense %>
                     <% unless location_offense.location.source_line.strip.empty? %>
                     <span class="location-line">Line <%= location_offense.location.line %></span>
+                    <% if context_lines.positive? %>
+                    <pre><code><% source_context(location_offense).each do |context| %><span class="line-number"><%= context.number %></span><%= context.current ? highlighted_source_line(location_offense) : context.source %>
+<% end %></code></pre>
+                    <% else %>
                     <pre><code><%= highlighted_source_line(location_offense) %></code></pre>
+                    <% end %>
                     <% end %>
                     <% end %>
                   </div>
